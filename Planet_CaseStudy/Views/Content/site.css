@@ -1,0 +1,56 @@
+﻿/* Yeni eklemeler */
+.table {
+    font-size: 14px;
+}
+
+    .table th {
+        white-space: nowrap;
+    }
+
+.badge {
+    font-size: 0.85em;
+    padding: 0.35em 0.65em;
+}
+
+.btn-group .btn {
+    margin-right: 5px;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+}
+/* Add these styles to your site.css */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    background-color: transparent;
+}
+
+    .table th {
+        background-color: #6f42c1; /* Purple header */
+        color: white;
+        padding: 12px;
+        text-align: left;
+    }
+
+    .table td {
+        padding: 12px;
+        vertical-align: middle;
+        border-top: 1px solid #dee2e6;
+    }
+
+.table-striped tbody tr:nth-of-type(odd) {
+    background-color: rgba(111, 66, 193, 0.05); /* Very light purple */
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(111, 66, 193, 0.1); /* Light purple on hover */
+}
+
+/* Action buttons styling */
+.btn-group .btn {
+    border-radius: 4px;
+    margin-right: 4px;
+}

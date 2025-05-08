@@ -1,0 +1,40 @@
+@model Planet_CaseStudy.Models.Task
+
+<div class="container mt-4">
+    <div class="form-container">
+        <div class="form-header">
+            <h5 class="mb-0">Görevi Sil</h5>
+        </div>
+
+        <div class="form-body">
+            <div class="alert alert-warning">
+                <strong>Uyarý!</strong> Bu görevi silmek istediðinizden emin misiniz?
+            </div>
+
+            <!-- Display task details -->
+            <dl class="row">
+                <dt class="col-sm-3">Görev Adý</dt>
+                <dd class="col-sm-9">@Model.Name</dd>
+
+                <dt class="col-sm-3">Açýklama</dt>
+                <dd class="col-sm-9">@(Model.Description ?? "-")</dd>
+
+                <dt class="col-sm-3">Durum</dt>
+                <dd class="col-sm-9">@Model.Status</dd>
+
+                <dt class="col-sm-3">Bitiþ Tarihi</dt>
+                <dd class="col-sm-9">@(Model.DueDate?.ToString("dd.MM.yyyy") ?? "-")</dd>
+            </dl>
+
+            <!-- Fix the form to post to Delete action -->
+            @using (Html.BeginForm("Delete", "Task", new { id = Model.Id }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="d-flex justify-content-end">
+                    @Html.ActionLink("Vazgeç", "Index", null, new { @class = "btn btn-outline-secondary me-2" })
+                    <input type="submit" value="Sil" class="btn btn-danger px-4" />
+                </div>
+            }
+        </div>
+    </div>
+</div>

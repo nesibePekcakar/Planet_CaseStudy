@@ -1,0 +1,60 @@
+@model Planet_CaseStudy.Models.Task
+
+@{
+    ViewBag.Title = "Yeni Görev Ekle";
+}
+
+<div class="container mt-4">
+    <div class="form-container">
+        <div class="form-header">
+            <h5 class="mb-0">
+                <i class="fas fa-plus me-2"></i>Yeni Görev Ekle
+            </h5>
+        </div>
+
+        <div class="form-body">
+            @using (Html.BeginForm())
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Görev Adý *</label>
+                    @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "Görev adýný giriniz", required = "required" })
+                    @Html.ValidationMessageFor(m => m.Name)
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Açýklama</label>
+                    @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = 3, placeholder = "Açýklama ekleyiniz (isteðe baðlý)" })
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Durum *</label>
+                        @Html.EnumDropDownListFor(m => m.Status, new { @class = "form-select", required = "required" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Bitiþ Tarihi</label>
+                        @Html.TextBoxFor(m => m.DueDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end mt-4">
+                    @Html.ActionLink("Ýptal", "Index", null, new { @class = "btn btn-outline-secondary me-2" })
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="fas fa-save me-2"></i>Kaydet
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('DueDate').min = today;
+        });
+    </script>
+}
