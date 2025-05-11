@@ -1,8 +1,9 @@
 ﻿@model Planet_CaseStudy.Models.Task
 
-@using (Html.BeginForm(Model.Id == 0 ? "AjaxCreate" : "AjaxEdit", "Task", FormMethod.Post, new { @class = "ajaxForm" }))
+@using (Html.BeginForm(Model.Id == 0 ? "AjaxCreate" : "AjaxEdit", "Task", FormMethod.Post, new { @class = "ajaxForm", id = "taskForm" }))
 {
     @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
 
     <div class="modal-header bg-primary text-white">
         <h5 class="modal-title">@((Model.Id == 0) ? "Yeni Görev" : "Görev Düzenle")</h5>

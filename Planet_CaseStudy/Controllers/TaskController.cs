@@ -95,8 +95,8 @@ public class TaskController : Controller
     }
 
     // AJAX: Edit task
-    [Route("AjaxEdit")]
     [HttpPost]
+    [Route("AjaxEdit")]
     public JsonResult AjaxEdit(Task updatedTask)
     {
         if (!ModelState.IsValid)
@@ -116,12 +116,13 @@ public class TaskController : Controller
                 return Json(new { success = false, message = "Görev bulunamadı." });
             }
 
-            // Update manually to avoid concurrency issues
+            // Update properties
             originalTask.Name = updatedTask.Name;
             originalTask.Description = updatedTask.Description;
             originalTask.Status = updatedTask.Status;
             originalTask.DueDate = updatedTask.DueDate?.Date;
 
+            db.Entry(originalTask).State = EntityState.Modified;
             db.SaveChanges();
 
             return Json(new { success = true, message = "Görev başarıyla güncellendi!" });
@@ -131,6 +132,7 @@ public class TaskController : Controller
             return Json(new { success = false, message = ex.Message });
         }
     }
+
 
 
     // AJAX: Archive task

@@ -72,3 +72,4 @@ function updateTaskList() {
         $('#taskModal').modal('hide');
     });
 }
+
