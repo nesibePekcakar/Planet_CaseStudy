@@ -1,36 +1,39 @@
-@model Planet_CaseStudy.Models.Task
-@section Scripts {
-    <script src="~/Scripts/taskAjax.js"></script>
-}
+﻿@model Planet_CaseStudy.Models.Task
 
+@using (Html.BeginForm(Model.Id == 0 ? "AjaxCreate" : "AjaxEdit", "Task", FormMethod.Post, new { @class = "ajaxForm" }))
+{
+    @Html.AntiForgeryToken()
 
-<div class="modal-header bg-primary text-white">
-    <h5 class="modal-title">Yeni G�rev</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-<div class="modal-body">
-    @using (Html.BeginForm("AjaxCreate", "Task", FormMethod.Post, new { id = "createTaskForm", @class = "ajaxForm" }))
-    {
-        @Html.AntiForgeryToken()
+    <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">@((Model.Id == 0) ? "Yeni Görev" : "Görev Düzenle")</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+
+    <div class="modal-body">
         <div class="mb-3">
             @Html.LabelFor(m => m.Name)
             @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
             @Html.ValidationMessageFor(m => m.Name)
         </div>
+
         <div class="mb-3">
             @Html.LabelFor(m => m.Description)
             @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = 3 })
         </div>
+
         <div class="mb-3">
             @Html.LabelFor(m => m.DueDate)
             @Html.TextBoxFor(m => m.DueDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
         </div>
+
         <div class="mb-3">
             @Html.LabelFor(m => m.Status)
             @Html.EnumDropDownListFor(m => m.Status, new { @class = "form-select" })
         </div>
-        <div class="text-end">
-            <button type="submit" class="btn btn-primary">Kaydet</button>
-        </div>
-    }
-</div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">Kaydet</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+    </div>
+}

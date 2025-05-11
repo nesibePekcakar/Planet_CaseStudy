@@ -13,6 +13,9 @@ namespace Planet_CaseStudy
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
+            // Attribute routing'i etkinleştir
+            routes.MapMvcAttributeRoutes();
+
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",

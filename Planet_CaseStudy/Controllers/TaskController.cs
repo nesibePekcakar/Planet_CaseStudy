@@ -3,36 +3,36 @@ using System.Collections.Generic;
 using System.Net;
 using System.Web.Mvc;
 using System;
-using System.Linq;  
-using System.Data.Entity;  
+using System.Linq;
+using System.Data.Entity;
 
+[RoutePrefix("Task")]
 public class TaskController : Controller
 {
     private ApplicationDbContext db = new ApplicationDbContext();
 
     // GET: Task
-    public ActionResult Index(string statusFilter)
+    public ActionResult Index(string statusFilter, bool showArchived = false)
     {
         try
         {
-            // Get all tasks grouped by status
             var tasks = db.Tasks.AsQueryable();
 
-            // Apply status filter if specified
+            if (!showArchived)
+                tasks = tasks.Where(t => !t.IsArchived);
+
             if (!string.IsNullOrEmpty(statusFilter) && statusFilter != "Tümü" &&
                 Enum.TryParse(statusFilter, out TaskStatus status))
             {
                 tasks = tasks.Where(t => t.Status == status);
             }
 
-            // Group tasks by status while maintaining the filtered results
             var groupedTasks = tasks
                 .OrderBy(t => t.DueDate)
                 .GroupBy(t => t.Status)
-                .OrderBy(g => g.Key) // Optional: order by status enum value
+                .OrderBy(g => g.Key)
                 .ToList();
 
-            // Prepare status filter dropdown
             ViewBag.statusFilter = Enum.GetNames(typeof(TaskStatus))
                 .Select(x => new SelectListItem { Text = x, Value = x })
                 .ToList();
@@ -47,65 +47,147 @@ public class TaskController : Controller
         }
     }
 
-    // GET: Task/Create
-    public ActionResult Create() => View();
+    // AJAX: Load Create Form
+    [HttpGet]
+    public ActionResult Create()
+    {
+        var task = new Task(); // Empty model
+        if (Request.IsAjaxRequest())
+            return PartialView("_TaskFormPartial", task); // Modal version
+        return View(task); // Fallback (if someone visits the page directly)
+    }
 
+
+
+    // AJAX: Load Edit Form
+    [HttpGet]
+    public ActionResult Edit(int? id)
+    {
+        if (id == null)
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
+        var task = db.Tasks.Find(id); // DO NOT filter IsArchived here!
+        if (task == null)
+            return HttpNotFound();
+
+        if (Request.IsAjaxRequest())
+            return PartialView("_TaskFormPartial", task);
+        return View(task);
+    }
+
+
+    // AJAX: Create task
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public ActionResult Create(Task task)
+    [Route("AjaxCreate")]
+    public JsonResult AjaxCreate(Task task)
     {
         if (ModelState.IsValid)
         {
             task.DueDate = task.DueDate?.Date;
             db.Tasks.Add(task);
             db.SaveChanges();
-            TempData["SuccessMessage"] = "Görev başarıyla oluşturuldu!";
-            return RedirectToAction("Index");
+
+            return Json(new { success = true, message = "Görev başarıyla oluşturuldu!" });
         }
-        return View(task);
+
+        var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+        return Json(new { success = false, errors });
     }
 
-    // GET: Task/Edit/5
-    public ActionResult Edit(int? id) => GetTaskView(id);
-
+    // AJAX: Edit task
+    [Route("AjaxEdit")]
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public ActionResult Edit(Task task)
+    public JsonResult AjaxEdit(Task updatedTask)
     {
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid)
         {
-            task.DueDate = task.DueDate?.Date;
-            db.Entry(task).State = System.Data.Entity.EntityState.Modified;
-            db.SaveChanges();
-            TempData["SuccessMessage"] = "Görev başarıyla güncellendi!";
-            return RedirectToAction("Index");
+            var validationErrors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            return Json(new { success = false, errors = validationErrors });
         }
-        return View(task);
+
+        try
+        {
+            var originalTask = db.Tasks.Find(updatedTask.Id);
+            if (originalTask == null)
+            {
+                return Json(new { success = false, message = "Görev bulunamadı." });
+            }
+
+            // Update manually to avoid concurrency issues
+            originalTask.Name = updatedTask.Name;
+            originalTask.Description = updatedTask.Description;
+            originalTask.Status = updatedTask.Status;
+            originalTask.DueDate = updatedTask.DueDate?.Date;
+
+            db.SaveChanges();
+
+            return Json(new { success = true, message = "Görev başarıyla güncellendi!" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
     }
 
-    // GET: Task/Delete/5
-    public ActionResult Delete(int? id) => GetTaskView(id);
 
+    // AJAX: Archive task
     [HttpPost]
-    [ValidateAntiForgeryToken]
-    public ActionResult Delete(int id)
+    [Route("AjaxArchive")]
+    public JsonResult AjaxArchive(int id)
     {
-        var task = db.Tasks.Find(id);
-        if (task == null) return HttpNotFound();
+        try
+        {
+            var task = db.Tasks.Find(id);
+            if (task == null)
+                return Json(new { success = false, message = "Görev bulunamadı." });
 
-        db.Tasks.Remove(task);
-        db.SaveChanges();
-        TempData["SuccessMessage"] = "Görev başarıyla silindi!";
-        return RedirectToAction("Index");
+            task.IsArchived = true;
+            db.Entry(task).State = EntityState.Modified;
+            db.SaveChanges();
+
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
     }
 
-    // Helper method for GET actions
+    // Utility for fallback views
     private ActionResult GetTaskView(int? id)
     {
-        if (id == null) return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+        if (id == null)
+            return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
         var task = db.Tasks.Find(id);
         return task == null ? HttpNotFound() : (ActionResult)View(task);
     }
+    [HttpGet]
+    public ActionResult PartialTaskList(string statusFilter, bool showArchived = false)
+    {
+        var tasks = db.Tasks.AsQueryable();
+
+        if (!showArchived)
+            tasks = tasks.Where(t => !t.IsArchived);
+
+        if (!string.IsNullOrEmpty(statusFilter) && statusFilter != "Tümü" &&
+            Enum.TryParse(statusFilter, out TaskStatus status))
+        {
+            tasks = tasks.Where(t => t.Status == status);
+        }
+
+        var groupedTasks = tasks
+            .OrderBy(t => t.DueDate)
+            .GroupBy(t => t.Status)
+            .OrderBy(g => g.Key)
+            .ToList();
+
+        return PartialView("_TaskListPartial", groupedTasks);
+    }
+
 
     protected override void Dispose(bool disposing)
     {

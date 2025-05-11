@@ -1,0 +1,78 @@
+﻿@model IEnumerable<IGrouping<Planet_CaseStudy.Models.TaskStatus, Planet_CaseStudy.Models.Task>>
+@using Planet_CaseStudy.Models
+
+@functions {
+    string GetStatusBadgeClass(TaskStatus status)
+    {
+        switch (status)
+        {
+            case TaskStatus.Bekliyor: return "bg-secondary";
+            case TaskStatus.DevamEdiyor: return "bg-warning text-dark";
+            case TaskStatus.Tamamlandı: return "bg-success";
+            default: return "bg-light text-dark";
+        }
+    }
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info mt-3">
+        <i class="fas fa-info-circle me-2"></i> Henüz görev bulunmamaktadır.
+    </div>
+}
+else
+{
+    foreach (var group in Model.OrderBy(g => g.Key))
+    {
+        <div class="card mb-3 border-0 shadow-sm">
+            <div class="card-header @GetStatusBadgeClass(group.Key) text-white d-flex justify-content-between align-items-center">
+                <h5 class="m-0">
+                    @group.Key.ToString()
+                    <span class="badge bg-white text-dark ms-2">@group.Count()</span>
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:25%">Görev Adı</th>
+                                <th style="width:30%">Açıklama</th>
+                                <th style="width:15%" class="text-center">Bitiş Tarihi</th>
+                                <th style="width:15%" class="text-center">Durum</th>
+                                <th style="width:15%" class="text-center">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var task in group.OrderBy(t => t.DueDate))
+                            {
+                                <tr id="taskRow_@task.Id">
+                                    <td>@task.Name</td>
+                                    <td>@(task.Description ?? "-")</td>
+                                    <td class="text-center @(task.DueDate.HasValue && task.DueDate < DateTime.Now ? "text-danger" : "")">
+                                        @(task.DueDate?.ToString("dd.MM.yyyy") ?? "-")
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge @GetStatusBadgeClass(task.Status)">
+                                            @task.Status.ToString()
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="@Url.Action("Edit", "Task", new { id = task.Id })"
+                                               class="btn btn-sm btn-outline-primary open-modal">Düzenle</a>
+                                            <button class="btn btn-sm btn-outline-danger archiveTaskBtn"
+                                                    data-id="@task.Id">
+                                                Arşivle
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+}

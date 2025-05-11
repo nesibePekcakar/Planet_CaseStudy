@@ -32,5 +32,7 @@ namespace Planet_CaseStudy.Models
         [Display(Name = "Son Tarih")]
         [DataType(DataType.Date)]
         public DateTime? DueDate { get; set; }
+        public bool IsArchived { get; set; } = false;
+
     }
 }

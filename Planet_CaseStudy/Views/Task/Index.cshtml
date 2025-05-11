@@ -1,130 +1,42 @@
-@model IEnumerable<IGrouping<Planet_CaseStudy.Models.TaskStatus, Planet_CaseStudy.Models.Task>>
+ï»¿@model IEnumerable<IGrouping<Planet_CaseStudy.Models.TaskStatus, Planet_CaseStudy.Models.Task>>
 @using Planet_CaseStudy.Models
 
 @{
-    // Add this null check at the very top
-    if (Model == null)
-    {
-        <div class="alert alert-danger">
-            <strong>Hata!</strong> Görev listesi yüklenemedi.
-        </div>
-        return;
-    }
-
-    string GetStatusBadgeClass(TaskStatus status)
-    {
-        switch (status)
-        {
-            case TaskStatus.Bekliyor:
-                return "bg-secondary";
-            case TaskStatus.DevamEdiyor:
-                return "bg-warning text-dark";
-            case TaskStatus.Tamamlandý:
-                return "bg-success";
-            default:
-                return "bg-light text-dark";
-        }
-    }
+    bool showArchived = ViewBag.showArchived ?? false;
 }
 
-<div class="container mt-4">
-    <div class="table-container">
-        <div class="form-header d-flex justify-content-between align-items-center">
-            <h4 class="m-0">Görev Listesi</h4>
-            @Html.ActionLink("Yeni Görev", "Create", null, new { @class = "btn btn-light btn-sm" })
-        </div>
+<div class="table-container mt-4">
+    <div class="form-header d-flex justify-content-between align-items-center">
+        <h4 class="m-0">GÃ¶rev Listesi</h4>
+        <a href="@Url.Action("Create", "Task")" class="btn btn-light btn-sm open-modal">
+            <i class="fas fa-plus me-1"></i>Yeni GÃ¶rev
+        </a>
+    </div>
 
-        <!-- Status Filter Dropdown -->
-        <div class="p-3 bg-light rounded-top">
-            @using (Html.BeginForm("Index", "Task", FormMethod.Get))
-            {
-                <div class="row align-items-center">
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Durum Filtresi:</label>
-                        @Html.DropDownList("statusFilter", (IEnumerable<SelectListItem>)ViewBag.statusFilter,
-                            new { @class = "form-select", onchange = "this.form.submit()" })
-                    </div>
-                </div>
-            }
-        </div>
-
-        <!-- Grouped Tasks -->
-        @foreach (var group in Model)
+    <div class="p-3 bg-light rounded-top">
+        @using (Html.BeginForm("Index", "Task", FormMethod.Get, new { @class = "row g-3 align-items-center" }))
         {
-            <div class="card mb-4 border-0 shadow-sm">
-                <div class="card-header @GetStatusBadgeClass(group.Key) text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="m-0">
-                            @group.Key.ToString()
-                            <span class="badge bg-white text-dark ms-2">@group.Count()</span>
-                        </h5>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th style="width:25%">Görev Adý</th>
-                                    <th style="width:30%">Açýklama</th>
-                                    <th style="width:15%" class="text-center">Bitiþ Tarihi</th>
-                                    <th style="width:15%" class="text-center">Ýþlemler</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var task in group)
-                                {
-                                    <tr>
-                                        <td>@task.Name</td>
-                                        <td>@(task.Description ?? "-")</td>
-                                        <td class="text-center @(task.DueDate.HasValue && task.DueDate < DateTime.Now ? "text-danger" : "")">
-                                            @(task.DueDate?.ToString("dd.MM.yyyy") ?? "-")
-                                        </td>
-                                        <td class="text-center">
-                                            <div class="btn-group btn-group-sm">
-                                                @Html.ActionLink("Düzenle", "Edit", new { id = task.Id },
-                                                    new { @class = "btn btn-outline-primary" })
-                                                @Html.ActionLink("Sil", "Delete", new { id = task.Id },
-                                                    new { @class = "btn btn-outline-danger" })
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Durum Filtresi:</label>
+                @Html.DropDownList("statusFilter", (IEnumerable<SelectListItem>)ViewBag.statusFilter,
+                    new { @class = "form-select", onchange = "this.form.submit()" })
+            </div>
+            <div class="col-md-4">
+                <div class="form-check form-switch mt-4">
+                    <input class="form-check-input" type="checkbox" id="showArchived" name="showArchived"
+                           value="true" @(showArchived ? "checked" : "") onchange="this.form.submit()">
+                    <label class="form-check-label" for="showArchived">ArÅŸivlenmiÅŸ GÃ¶revleri GÃ¶ster</label>
                 </div>
             </div>
         }
+    </div>
 
-        @if (!Model.Any())
-        {
-            <div class="alert alert-info mt-3">
-                <i class="fas fa-info-circle me-2"></i> Henüz görev bulunmamaktadýr.
-            </div>
-        }
+    <!-- Task List Container for AJAX Refresh -->
+    <div id="taskListContainer">
+        @Html.Partial("_TaskListPartial", Model)
     </div>
 </div>
 
 @section Scripts {
-    <script>
-        // Make status groups collapsible
-        document.querySelectorAll('.card-header').forEach(header => {
-            header.addEventListener('click', function() {
-                const cardBody = this.nextElementSibling;
-                const icon = this.querySelector('i');
-
-                if (cardBody.style.display === 'none') {
-                    cardBody.style.display = 'block';
-                    icon.classList.remove('fa-chevron-up');
-                    icon.classList.add('fa-chevron-down');
-                } else {
-                    cardBody.style.display = 'none';
-                    icon.classList.remove('fa-chevron-down');
-                    icon.classList.add('fa-chevron-up');
-                }
-            });
-        });
-    </script>
+    <script src="~/Scripts/taskAjax.js"></script>
 }
